@@ -1,4 +1,9 @@
+store = %{}
+
 defmodule ReverseProxy.Cache do
+  import Plug.Conn
+  alias ReverseProxy.Store
+
   @moduledoc """
   A basic caching layer for `ReverseProxy`.
 
@@ -18,6 +23,45 @@ defmodule ReverseProxy.Cache do
   """
   @spec serve(Plug.Conn.t, callback) :: Plug.Conn.t
   def serve(conn, upstream) do
-    upstream.(conn)
+    uri = "#{conn.request_path}?#{conn.query_string}"
+
+    IO.inspect Store.get_all
+
+    if Store.has? uri do
+      res = Store.get(uri)
+      Plug.Conn.send_resp conn, 200, res.body
+    else
+      {request, response} = upstream.(conn)
+      Store.put uri, response
+      request
+    end
+  end
+end
+
+defmodule ReverseProxy.Store do
+  def start_link do
+    Agent.start_link(fn -> HashDict.new end, name: __MODULE__)
+  end
+
+  def has?(key) do
+    Agent.get(__MODULE__, fn dict ->
+      Dict.has_key? dict, key
+    end)
+  end
+
+  def put(key, val) do
+    Agent.update(__MODULE__, &Dict.put(&1, key, val))
+  end
+
+  def get(key) do
+    Agent.get(__MODULE__, fn dict ->
+      dict |> Dict.get key
+    end)
+  end
+
+  def get_all do
+    Agent.get(__MODULE__, fn dict ->
+      dict
+    end)
   end
 end

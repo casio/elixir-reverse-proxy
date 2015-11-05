@@ -43,6 +43,7 @@ defmodule ReverseProxy do
     import Supervisor.Spec, warn: false
 
     children = [
+      worker(ReverseProxy.Store, [])
     ]
 
     opts = [strategy: :one_for_one, name: ReverseProxy.Supervisor]
