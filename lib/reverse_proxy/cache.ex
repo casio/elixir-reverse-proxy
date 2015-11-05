@@ -31,9 +31,10 @@ defmodule ReverseProxy.Cache do
       res = Store.get(uri)
       Plug.Conn.send_resp conn, 200, res.body
     else
-      {request, response} = upstream.(conn)
-      Store.put uri, response
-      request
+      case upstream.(conn) do
+        {request, response} -> Store.put uri, response; request
+        request -> request
+      end
     end
   end
 end

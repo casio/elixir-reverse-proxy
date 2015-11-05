@@ -19,7 +19,7 @@ defmodule ReverseProxy.Runner do
     {method, url, body, headers} = prepare_request(server, conn)
 
     method
-      |> client.request(url, body, headers, timeout: 5_000)
+      |> client.request(url, body, headers, timeout: 500_000_000, recv_timeout: 500_000_000)
       |> process_response(conn)
   end
 
@@ -42,8 +42,8 @@ defmodule ReverseProxy.Runner do
   end
 
   @spec process_response({Atom.t, Map.t}, Plug.Conn.t) :: Plug.Conn.t
-  defp process_response({:error, _}, conn) do
-    conn |> Plug.Conn.send_resp(502, "Bad Gateway")
+  defp process_response({:error, msg}, conn) do
+    conn |> Plug.Conn.send_resp(502, "Bad Gateway:" <> msg.reason)
   end
   defp process_response({:ok, response}, conn) do
     request = conn
