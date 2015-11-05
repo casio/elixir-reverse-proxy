@@ -46,9 +46,10 @@ defmodule ReverseProxy.Runner do
     conn |> Plug.Conn.send_resp(502, "Bad Gateway")
   end
   defp process_response({:ok, response}, conn) do
-    conn
+    request = conn
       |> put_resp_headers(response.headers)
       |> Plug.Conn.send_resp(response.status_code, response.body)
+    {request, response}
   end
 
   @spec put_resp_headers(Plug.Conn.t, [{String.t, String.t}]) :: Plug.Conn.t
